@@ -9,6 +9,6 @@ fi
 # Get Compartment OCID
 # ocid_comp=$(oci iam compartment list --query "data [?\"name\"=='${comp_name}'] | [0].id" --raw-output)
 # Solves access and subcompartment issue. Thanks Tim Trauernicht @ Oracle for the fix
-ocid_comp=$(oci iam compartment list --access-level ACCESSIBLE --compartment-id-in-subtree TRUE --all --quercho $oci_comp^C"data [?\"name\"=='${comp_name}'] | [0].id" --raw-output
+ocid_comp=$(oci iam compartment list --access-level ACCESSIBLE --compartment-id-in-subtree TRUE --all --query $oci_comp "data [?\"name\"=='${comp_name}'] | [0].id" --raw-output)
 
-echo "Comapartment OCID: " ${ocid_comp}
+echo "Compartment OCID: " ${ocid_comp}
