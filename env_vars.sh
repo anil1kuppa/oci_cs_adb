@@ -1,4 +1,5 @@
 #!/bin/bash
+export db_name=
 
 ocid_comp=$(oci iam availability-domain list --all | jq -r '.data[0]."compartment-id"')   ##Default compartmentId
 echo "DB Password :" ; read -s db_pwd; export db_pwd    # Read the password for the ADB.                                                         
