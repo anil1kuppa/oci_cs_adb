@@ -1,8 +1,8 @@
 #!/bin/bash
-export db_name=
+export db_name=SignLX
 
 ocid_comp=$(oci iam availability-domain list --all | jq -r '.data[0]."compartment-id"')   ##Default compartmentId
-echo "DB Password :" ; read -s db_pwd; export db_pwd    # Read the password for the ADB.                                                         
+echo " Please enter DB Password :" ; read -s db_pwd; export db_pwd    # Read the password for the ADB.                                                         
 export display_name=${db_name}                          # The display name of the ADB instance
 export wallet_file=${db_name}                           # The filename of the Wallet
 export wallet_pwd=${db_pwd}                             # The password for the Wallet

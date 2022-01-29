@@ -5,13 +5,12 @@ Steps to follow
 1. Go to clould.oracle.com and sign up for account. It gives free access to Oracle Autonomous DB.
 2. Click on cloud shell ![image](https://user-images.githubusercontent.com/24491456/150648801-51912bb9-3cac-4b04-973f-69dbe98f02c5.png)
 3. Clone the GIT repository, git is pre-installed with OCI Cloud Shell:
-
-anilkuppa@cloudshell:~ (ap-seoul-1)$ git clone https://github.com/anil1kuppa/oci_cs_adb
-
+<pre><code>git clone https://github.com/anil1kuppa/oci_cs_adb
+</pre></code>
 Change directory to the working directory and remove the remote origin. This is to avoid changes going to the GIT repository from OCI Cloud Shell. Feel free to create a branch and participate/improve the repo.
-
-anilkuppa@cloudshell:~ (ap-seoul-1)$ cd oci_cs_adb
-anilkuppa@cloudshell:~ (ap-seoul-1)$ git remote remove origin
+<pre><code>cd oci_cs_adb
+git remote remove origin
+</pre></code>
 
 You should have the following files in the git working directory:
 
@@ -25,9 +24,16 @@ You should have the following files in the git working directory:
 
 Edit the env_vars.sh file using vim. You need to set the db_name variable in the script. Save the file.
 
-anilkuppa@cloudshell:~ (ap-seoul-1)$ vi env_vars.sh
+<pre><code>vi env_vars.sh
+</pre></code>
+
+Enter DB Password. The password should be of length between 12 to 30 and should contain 1 capital letter and 1 number alteast
+
+<pre><code>source env_vars.sh
+</pre></code>
 
 
 These scripts are to support the following [blog post](https://sunrise-flier-24f.notion.site/Create-Autonomous-DB-in-OCI-d714d8d0c41443d0a756961b9a3316e2)
+
 
 

@@ -1,4 +1,3 @@
-
   CREATE TABLE "SIGNALX"."TRADES" 
    (    "BUYTIME" DATE, 
     "BUYPRICE" NUMBER, 
@@ -307,4 +306,4 @@ COMMIT;
     
 END;
 /
- 
+
