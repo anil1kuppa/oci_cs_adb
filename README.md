@@ -2,7 +2,7 @@
 This would create autonomous DB and the relevant tables required for [Algo Strategies](https://github.com/anil1kuppa/kha-ching)
 
 Steps to follow
-1. Go to clould.oracle.com and sign up for account. It gives free access to Oracle Autonomous DB.
+1. Go to [clould.oracle.com](cloud.oracle.com) and sign up for account. It gives free access to Oracle Autonomous DB.
 2. Click on cloud shell ![image](https://user-images.githubusercontent.com/24491456/150648801-51912bb9-3cac-4b04-973f-69dbe98f02c5.png)
 3. Clone the GIT repository, git is pre-installed with OCI Cloud Shell:
 <pre><code>git clone https://github.com/anil1kuppa/oci_cs_adb
@@ -32,8 +32,20 @@ Enter DB Password. The password should be of length between 12 to 30 and should 
 <pre><code>source env_vars.sh
 </pre></code>
 
+This will fetch the compartMentID
 
-These scripts are to support the following [blog post](https://sunrise-flier-24f.notion.site/Create-Autonomous-DB-in-OCI-d714d8d0c41443d0a756961b9a3316e2)
+<pre><code>source get_ocid_comp.sh
+</pre></code>
 
 
 
+
+source create_atp_free.sh
+source check_atp_status.sh
+source get_adb_ocid.sh
+source get_wallet.sh
+source fix_sqlnet.sh
+source create_user.sh
+source create_soda_collections.sh
+source print_soda_url.sh 
+Note down the URL and enter in the environment variable 
