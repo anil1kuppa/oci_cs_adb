@@ -2,7 +2,7 @@
 This would create autonomous DB and the relevant tables required for [Algo Strategies](https://github.com/anil1kuppa/kha-ching)
 
 Steps to follow
-1. Go to [clould.oracle.com](cloud.oracle.com) and sign up for account. It gives free access to Oracle Autonomous DB.
+1. Go to [clould.oracle.com](cloud.oracle.com) and sign up for account. It gives free access to Oracle Autonomous DB. Preferably choose region as India-Hyderabad.
 2. Click on cloud shell ![image](https://user-images.githubusercontent.com/24491456/150648801-51912bb9-3cac-4b04-973f-69dbe98f02c5.png)
 3. Clone the GIT repository, git is pre-installed with OCI Cloud Shell:
 <pre><code>git clone https://github.com/anil1kuppa/oci_cs_adb
@@ -60,8 +60,9 @@ source fix_sqlnet.sh
 </pre></code>
 ![image](https://user-images.githubusercontent.com/24491456/151687992-0ac19ed4-d780-4b2b-bbf4-c72ca59b6fe0.png)
 
-10. Print the SODA URL and copy it. This will be used to set the environment variable _ORCL_HOST_URL_ in [khaching](https://github.com/anil1kuppa/kha-ching)
+10. Print the SODA URL and copy (Ctlr+C) it. This will be used to set the environment variable _ORCL_HOST_URL_ in [khaching](https://github.com/anil1kuppa/kha-ching)
 <pre><code>source  print_soda_url.sh
 </pre></code>
+It will look something like this: https://g13241234ani-signlx.adb.ap-hyderabad-1.oraclecloudapps.com/ords/signalx
 
 **Do not share this URL with anyone as it's connection to DB. It will store the transactions, daily plans and executed plan.**
