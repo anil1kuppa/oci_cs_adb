@@ -4,7 +4,8 @@
     "SELLPRICE" NUMBER, 
     "QUANTITY" NUMBER(10,0), 
     "SELLTIME" DATE, 
-    "STRATEGY" VARCHAR2(10 BYTE) COLLATE "USING_NLS_COMP", 
+    "STRATEGY" VARCHAR2(20 BYTE) COLLATE "USING_NLS_COMP", 
+    "NAME" VARCHAR2(20 BYTE) COLLATE "USING_NLS_COMP", 
     "TAG" VARCHAR2(20 BYTE) COLLATE "USING_NLS_COMP", 
     "TRADINGSYMBOL" VARCHAR2(30 BYTE) COLLATE "USING_NLS_COMP", 
     "PROFITS" NUMBER(10,2) GENERATED ALWAYS AS (("SELLPRICE"-"BUYPRICE")*"QUANTITY") VIRTUAL , 
@@ -205,36 +206,18 @@ loop
 end loop;
 
 delete from access_tokens where creation_date<sysdate-5;
-UPDATE trades t1 set strategy='NF920' WHERE SUBSTR(t1.tradingsymbol,1,4)='NIFT'
-and to_char(t1.selltime,'HH24MI') between '0920' and '1000' and strategy is null
-AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
-    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI'))=2;
-    
-UPDATE trades t1 set strategy='NF1230' WHERE SUBSTR(t1.tradingsymbol,1,4)='NIFT'
-and to_char(t1.selltime,'HH24MI') between '1200' and '1300' and strategy is null
-AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
-    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI'))=2;
-    
-UPDATE trades t1 set strategy='NF920' WHERE SUBSTR(t1.tradingsymbol,1,4)='NIFT'
-and to_char(t1.selltime,'HH24MI') between '0919' and '1000' and strategy is null
-AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
-    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI'))=2;
-    
-UPDATE trades t1 set strategy='BNF920' WHERE SUBSTR(t1.tradingsymbol,1,4)='BANK'
-and to_char(t1.selltime,'HH24MI') between '0919' and '1000' and strategy is null
-AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
-    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI')
-    and substr(t1.tradingsymbol,1,length(t1.tradingsymbol)-2)=
-    substr(t2.tradingsymbol,1,length(t2.tradingsymbol)-2))=2;    
-    
-UPDATE trades t1 set strategy='BNF1230' WHERE SUBSTR(t1.tradingsymbol,1,4)='BANK'
-and to_char(t1.selltime,'HH24MI') between '1200' and '1300' and strategy is null
-AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
-    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI')
-    and substr(t1.tradingsymbol,1,length(t1.tradingsymbol)-2)=
-    substr(t2.tradingsymbol,1,length(t2.tradingsymbol)-2))=2;        
+update trades set (name,strategy)
+=(SELECT
+json_value(json_document,'$.name' ) ,json_value(json_document,'$.strategy' )
+FROM
+dailyplan
+WHERE JSON_VALUE(json_document,'$.orderTag' ) =tag
+)
+where exists ( select 1 from dailyplan
+Where JSON_VALUE(json_document,'$.orderTag' ) =tag) and strategy is null;
 
- /*collection := DBMS_SODA.open_collection('dailyplan');
+
+/*collection := DBMS_SODA.open_collection('dailyplan');
 
     -- Define the filter specification
     qbe := '{"expiresAt" : { "$lt" : "'||TO_CHAR(SYSDATE -2,'YYYY-MM-DD')||'" } }';
