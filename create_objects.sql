@@ -230,6 +230,13 @@ FROM
   dailyplan
 WHERE
     JSON_EXISTS ( "JSON_DOCUMENT" , '$.expiresAt?(@< $B0)' PASSING TO_CHAR(SYSDATE -3,'YYYY-MM-DD') AS "B0");
+    
+IF to_char(sysdate,'DY')='THU' THEN
+   UPDATE trades
+   Set buytime=(trunc(sysdate)+interval '15' hour +interval '30' MINUTE)
+   ,buyprice=0
+   Where buytime  is null and buyprice is null and selltime>sysdate-10;
+END IF;
 end CREATE_TRADES;
 /
 
