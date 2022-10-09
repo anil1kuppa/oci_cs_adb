@@ -8,6 +8,7 @@
     "NAME" VARCHAR2(20 BYTE) COLLATE "USING_NLS_COMP", 
     "TAG" VARCHAR2(20 BYTE) COLLATE "USING_NLS_COMP", 
     "TRADINGSYMBOL" VARCHAR2(30 BYTE) COLLATE "USING_NLS_COMP", 
+    "PRODUCT" VARCHAR2(10),
     "PROFITS" NUMBER(10,2) GENERATED ALWAYS AS (("SELLPRICE"-"BUYPRICE")*"QUANTITY") VIRTUAL , 
     "CHARGES" NUMBER GENERATED ALWAYS AS (CASE  WHEN INSTR("TRADINGSYMBOL",'FUT')>0 THEN ROUND(50+0.0000236*"QUANTITY"*("BUYPRICE"+"SELLPRICE")+0.0001*"SELLPRICE"*"QUANTITY"+0.00002*"BUYPRICE"*"QUANTITY",2) ELSE ROUND(0.00063*"QUANTITY"*("SELLPRICE"+"BUYPRICE")+50+0.0005*"QUANTITY"*"SELLPRICE",2) END) VIRTUAL , 
     "ID" NUMBER(*,0) GENERATED ALWAYS AS IDENTITY MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE  NOKEEP  NOSCALE 
@@ -90,18 +91,19 @@ END;
 
 
  
-CREATE OR REPLACE PROCEDURE CREATE_TRADES(l_clob IN CLOB) as
+create or replace PROCEDURE SIGNALX.CREATE_TRADES(l_clob IN CLOB) as
 l_trades json_array_t;
 l_trade_obj     JSON_OBJECT_T;
 l_date DATE;
 l_quantity NUMBER;
 l_tradingSymbol VARCHAR2(40);
-L_TAG varchar2(10);
+L_TAG trades.tag%type;
 l_txnType VARCHAR2(10);
 l_price NUMBER(22,14);
 l_status VARCHAR2(20);
 l_exchange VARCHAR2(10);
 l_tradeiD number;
+l_product TRADES.PRODUCT%TYPE;
 l_cnt NUMBER:=0;
 BEGIN
 l_trades:=JSON_ARRAY_T.parse(l_clob);
@@ -116,13 +118,14 @@ loop
     l_txnType:=l_trade_obj.get_String('transaction_type');
     L_TAG:=l_trade_obj.get_String('tag');
     l_price:=l_trade_obj.get_Number('average_price');
+    l_product:=l_trade_obj.get_String('product');
     l_date:=TO_DATE( l_trade_obj.get_String('exchange_update_timestamp'),'YYYY-MM-DD HH24:MI:SS');
     CONTINUE WHEN (l_status<>'COMPLETE' );
-    IF l_exchange='NFO' THEN
+/*Checking if order is already placed */
+    IF l_exchange='NFO' THEN 
         select count(1) INTO
         l_cnt FROM TRADES where quantity=l_quantity
                 and TRADINGSYMBOL=l_tradingSymbol
-                AND ( L_TAG IS NULL OR tag='bsk' OR tag=L_TAG )
                 AND ((l_txnType='BUY' and buyprice IS NOT NULL
                       AND TRUNC(BUYTIME,'MI')=trunc(l_date,'MI'))
                       OR
@@ -143,8 +146,9 @@ loop
                      (SELLPRICE is NULL and l_txnType='SELL'
                      AND  buyprice IS not NULL));
         EXCEPTION
-        WHEN NO_data_found then
+        WHEN others then
         L_TRADEID:=-1;
+
         end;
         IF L_TRADEID=-1 THEN
             INSERT INTO TRADES(BUYTIME,
@@ -154,7 +158,8 @@ loop
             QUANTITY,
             TAG,
             tradingsymbol,
-            strategy)
+            product,
+name)
             VALUES
             (CASE WHEN l_txnType='BUY'
                                  THEN l_date
@@ -171,7 +176,8 @@ loop
            l_quantity,
            L_TAG,
            l_tradingSymbol,
-           CASE WHEN instr(l_tradingSymbol,'FUT')>0 THEN 'CMCHASE' ELSE NULL END);
+           l_product,
+CASE WHEN instr(l_tradingSymbol,'FUT')>0 THEN 'CMCHASE' ELSE NULL END);
        ELSE
              UPDATE TRADES    
             SET
@@ -188,7 +194,7 @@ loop
                                  THEN l_date
                                  else selltime END    
             WHERE ID=L_TRADEID;
-           
+
        END IF;  
     ELSE
         insert into share_transactions(tradingsymbol,
@@ -202,22 +208,41 @@ loop
                             ROUND(l_price,2),
                             l_date);
     END IF;
-                            
+
 end loop;
 
 delete from access_tokens where creation_date<sysdate-5;
-update trades set (name,strategy)
-=(SELECT
-json_value(json_document,'$.name' ) ,json_value(json_document,'$.strategy' )
-FROM
-dailyplan
-WHERE JSON_VALUE(json_document,'$.orderTag' ) =tag
-)
-where exists ( select 1 from dailyplan
-Where JSON_VALUE(json_document,'$.orderTag' ) =tag) and strategy is null;
+/*UPDATE trades t1 set strategy='NF920' WHERE SUBSTR(t1.tradingsymbol,1,4)='NIFT'
+and to_char(t1.selltime,'HH24MI') between '0920' and '1000' and strategy is null
+AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
+    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI'))=2;
 
+UPDATE trades t1 set strategy='NF1230' WHERE SUBSTR(t1.tradingsymbol,1,4)='NIFT'
+and to_char(t1.selltime,'HH24MI') between '1200' and '1300' and strategy is null
+AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
+    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI'))=2;
 
-/*collection := DBMS_SODA.open_collection('dailyplan');
+UPDATE trades t1 set strategy='NF920' WHERE SUBSTR(t1.tradingsymbol,1,4)='NIFT'
+and to_char(t1.selltime,'HH24MI') between '0919' and '1000' and strategy is null
+AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
+    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI'))=2;
+
+UPDATE trades t1 set strategy='BNF920' WHERE SUBSTR(t1.tradingsymbol,1,4)='BANK'
+and to_char(t1.selltime,'HH24MI') between '0919' and '1000' and strategy is null
+AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
+    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI')
+    and substr(t1.tradingsymbol,1,length(t1.tradingsymbol)-2)=
+    substr(t2.tradingsymbol,1,length(t2.tradingsymbol)-2))=2;    
+
+UPDATE trades t1 set strategy='BNF1230' WHERE SUBSTR(t1.tradingsymbol,1,4)='BANK'
+and to_char(t1.selltime,'HH24MI') between '1200' and '1300' and strategy is null
+AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
+    and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI')
+    and substr(t1.tradingsymbol,1,length(t1.tradingsymbol)-2)=
+    substr(t2.tradingsymbol,1,length(t2.tradingsymbol)-2))=2;        
+*/
+
+ /*collection := DBMS_SODA.open_collection('dailyplan');
 
     -- Define the filter specification
     qbe := '{"expiresAt" : { "$lt" : "'||TO_CHAR(SYSDATE -2,'YYYY-MM-DD')||'" } }';
@@ -229,14 +254,20 @@ delete
 FROM
   dailyplan
 WHERE
-    JSON_EXISTS ( "JSON_DOCUMENT" , '$.expiresAt?(@< $B0)' PASSING TO_CHAR(SYSDATE -3,'YYYY-MM-DD') AS "B0");
-    
-IF to_char(sysdate,'DY')='THU' THEN
-   UPDATE trades
-   Set buytime=(trunc(sysdate)+interval '15' hour +interval '30' MINUTE)
-   ,buyprice=0
-   Where buytime  is null and buyprice is null and selltime>sysdate-10;
-END IF;
+    JSON_EXISTS ( "JSON_DOCUMENT" , '$.dayparam
+?(@< $B0)' PASSING TO_CHAR(SYSDATE -3,'YYYYMMDD') AS "B0");
+
+update trades set (name,strategy)
+=(SELECT
+json_value(json_document,'$.name' ) ,json_value(json_document,'$.strategy' )
+FROM
+dailyplan
+WHERE JSON_VALUE(json_document,'$.orderTag' ) =tag
+)
+where exists ( select 1 from dailyplan
+Where JSON_VALUE(json_document,'$.orderTag' ) =tag) and strategy is null;
+
+
 end CREATE_TRADES;
 /
 
