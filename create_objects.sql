@@ -9,6 +9,8 @@
     "TAG" VARCHAR2(20 BYTE) COLLATE "USING_NLS_COMP", 
     "TRADINGSYMBOL" VARCHAR2(30 BYTE) COLLATE "USING_NLS_COMP", 
     "PRODUCT" VARCHAR2(10),
+    "creation_date" DATE,
+    "LAST_UPDATED_date" DATE,
     "PROFITS" NUMBER(10,2) GENERATED ALWAYS AS (("SELLPRICE"-"BUYPRICE")*"QUANTITY") VIRTUAL , 
     "CHARGES" NUMBER GENERATED ALWAYS AS (CASE  WHEN INSTR("TRADINGSYMBOL",'FUT')>0 THEN ROUND(50+0.0000236*"QUANTITY"*("BUYPRICE"+"SELLPRICE")+0.0001*"SELLPRICE"*"QUANTITY"+0.00002*"BUYPRICE"*"QUANTITY",2) ELSE ROUND(0.00063*"QUANTITY"*("SELLPRICE"+"BUYPRICE")+50+0.0005*"QUANTITY"*"SELLPRICE",2) END) VIRTUAL , 
     "ID" NUMBER(*,0) GENERATED ALWAYS AS IDENTITY MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE  NOKEEP  NOSCALE 
@@ -90,7 +92,6 @@ END;
 /
 
 
- 
 create or replace PROCEDURE SIGNALX.CREATE_TRADES(l_clob IN CLOB) as
 l_trades json_array_t;
 l_trade_obj     JSON_OBJECT_T;
@@ -159,7 +160,8 @@ loop
             TAG,
             tradingsymbol,
             product,
-name)
+name,
+creation_date)
             VALUES
             (CASE WHEN l_txnType='BUY'
                                  THEN l_date
@@ -177,7 +179,8 @@ name)
            L_TAG,
            l_tradingSymbol,
            l_product,
-CASE WHEN instr(l_tradingSymbol,'FUT')>0 THEN 'CMCHASE' ELSE NULL END);
+CASE WHEN instr(l_tradingSymbol,'FUT')>0 THEN 'CMCHASE' ELSE NULL END,
+sysdate);
        ELSE
              UPDATE TRADES    
             SET
@@ -192,7 +195,8 @@ CASE WHEN instr(l_tradingSymbol,'FUT')>0 THEN 'CMCHASE' ELSE NULL END);
                                  else sellprice END,
                        selltime=CASE WHEN l_txnType='SELL'
                                  THEN l_date
-                                 else selltime END    
+                                 else selltime END   ,
+            TRADES.LAST_UPDATED_DATE=sysdate 
             WHERE ID=L_TRADEID;
 
        END IF;  
@@ -211,8 +215,8 @@ CASE WHEN instr(l_tradingSymbol,'FUT')>0 THEN 'CMCHASE' ELSE NULL END);
 
 end loop;
 
-delete from access_tokens where creation_date<sysdate-5;
-/*UPDATE trades t1 set strategy='NF920' WHERE SUBSTR(t1.tradingsymbol,1,4)='NIFT'
+/*delete from access_tokens where creation_date<sysdate-5;
+UPDATE trades t1 set strategy='NF920' WHERE SUBSTR(t1.tradingsymbol,1,4)='NIFT'
 and to_char(t1.selltime,'HH24MI') between '0920' and '1000' and strategy is null
 AND (select count(1) from trades T2  WHERE t2.tag=t1.tag 
     and trunc(t2.selltime,'MI')=trunc(t1.selltime,'MI'))=2;
@@ -271,7 +275,6 @@ Where JSON_VALUE(json_document,'$.orderTag' ) =tag) and strategy is null;
 end CREATE_TRADES;
 /
 
- 
 
 BEGIN
   ords.delete_privilege_mapping(
