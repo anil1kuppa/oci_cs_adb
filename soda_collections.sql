@@ -252,7 +252,7 @@ end CREATE_TRADES;
 /
 
  
-
+-- Refer https://oracle-base.com/articles/misc/oracle-rest-data-services-ords-restful-web-services-handling-complex-json-payloads
 BEGIN
   ords.delete_privilege_mapping(
     'oracle.soda.privilege.developer',
